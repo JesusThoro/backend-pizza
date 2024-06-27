@@ -53,9 +53,9 @@ app.post('/register_user', (req, res) => {
 
 // Ruta para iniciar sesión
 app.post('/login', (req, res) => {
-    const { fullName, phoneNumber } = req.body;
-    const query = "SELECT * FROM clientes WHERE fullName = ? AND phoneNumber = ?";
-    DB.query(query, [fullName, phoneNumber], (err, result) => {
+    const { fullName, number } = req.body; // Cambiar phoneNumber por number
+    const query = "SELECT * FROM clientes WHERE nombre_completo = ? AND telefono = ?"; // Cambiar fullName por nombre_completo y phoneNumber por telefono
+    DB.query(query, [fullName, number], (err, result) => {
         if (err) {
             res.status(500).send(err);
             return;
@@ -69,5 +69,6 @@ app.post('/login', (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log(`Servidor corriendo en el puerto ${port}`);
-});
+    console.log(`Servidor corriendo en http://localhost:${port}`);
+  });
+

@@ -25,7 +25,7 @@ DB.connect((err) => {
 
 // Ruta para obtener todos los usuarios
 app.get('/usuarios', (req, res) => {
-    const query = "SELECT * FROM clientes";
+     const query = "SELECT * FROM clientes";
     DB.query(query, (err, result) => {
         if (err) {
             res.status(500).send(err);
@@ -33,6 +33,7 @@ app.get('/usuarios', (req, res) => {
         }
         res.json(result);
     });
+   
 });
 
 // Ruta para registrar un nuevo usuario

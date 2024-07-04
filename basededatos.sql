@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 27-06-2024 a las 03:41:36
+-- Tiempo de generación: 05-07-2024 a las 01:36:19
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -33,17 +33,36 @@ CREATE TABLE `clientes` (
   `telefono` int(250) NOT NULL,
   `email` varchar(250) NOT NULL,
   `direccion` varchar(250) NOT NULL,
-  `especificaciones_direccion` varchar(250) NOT NULL
+  `especificaciones_direccion` varchar(250) NOT NULL,
+  `rol_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `clientes`
 --
 
-INSERT INTO `clientes` (`id`, `nombre_completo`, `telefono`, `email`, `direccion`, `especificaciones_direccion`) VALUES
-(1, 'juan', 656565665, 'asasb@gmail.com', 'calle centro', 'cerca de aquí, lejos de allá'),
-(2, 'Rogelio', 78788, 'roger@gmail.com', 'calle centro', 'cerca de aquí, lejos de allá'),
-(3, 'Aquim', 2147483647, '31adbixd31@gmail.com', 'Independencia 32 B', 'escuela');
+INSERT INTO `clientes` (`id`, `nombre_completo`, `telefono`, `email`, `direccion`, `especificaciones_direccion`, `rol_id`) VALUES
+(6, 'alma', 12345678, 'alma@gmail.com', 'lopez', 'lejos', 1),
+(7, 'andres', 1234567, 'andy@gmail.com', 'lopez', 'lavanderia', 2);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `roles`
+--
+
+CREATE TABLE `roles` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `roles`
+--
+
+INSERT INTO `roles` (`id`, `nombre`) VALUES
+(1, 'usuario'),
+(2, 'administrador');
 
 --
 -- Índices para tablas volcadas
@@ -53,6 +72,13 @@ INSERT INTO `clientes` (`id`, `nombre_completo`, `telefono`, `email`, `direccion
 -- Indices de la tabla `clientes`
 --
 ALTER TABLE `clientes`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `rol_id` (`rol_id`);
+
+--
+-- Indices de la tabla `roles`
+--
+ALTER TABLE `roles`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -63,7 +89,23 @@ ALTER TABLE `clientes`
 -- AUTO_INCREMENT de la tabla `clientes`
 --
 ALTER TABLE `clientes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
+-- AUTO_INCREMENT de la tabla `roles`
+--
+ALTER TABLE `roles`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- Restricciones para tablas volcadas
+--
+
+--
+-- Filtros para la tabla `clientes`
+--
+ALTER TABLE `clientes`
+  ADD CONSTRAINT `clientes_ibfk_1` FOREIGN KEY (`rol_id`) REFERENCES `roles` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

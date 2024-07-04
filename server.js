@@ -53,20 +53,31 @@ app.post('/register_user', (req, res) => {
 
 // Ruta para iniciar sesión
 app.post('/login', (req, res) => {
-    const { fullName, number } = req.body; // Cambiar phoneNumber por number
-    const query = "SELECT * FROM clientes WHERE nombre_completo = ? AND telefono = ?"; // Cambiar fullName por nombre_completo y phoneNumber por telefono
+    const { fullName, number } = req.body;
+    const query = "SELECT id, nombre_completo, telefono, rol_id FROM clientes WHERE nombre_completo = ? AND telefono = ?";
     DB.query(query, [fullName, number], (err, result) => {
         if (err) {
+            console.error("Error en la consulta SQL:", err);
             res.status(500).send(err);
             return;
         }
         if (result.length > 0) {
-            res.json({ message: 'Inicio de sesión exitoso' });
+            const user = result[0];
+            res.json({
+                message: 'Inicio de sesión exitoso',
+                user: {
+                    id: user.id,
+                    nombre_completo: user.nombre_completo,
+                    telefono: user.telefono,
+                    rol_id: user.rol_id
+                }
+            });
         } else {
             res.status(401).json({ message: 'Credenciales incorrectas' });
         }
     });
 });
+
 
 app.listen(port, () => {
     console.log(`Servidor corriendo en http://localhost:${port}`);

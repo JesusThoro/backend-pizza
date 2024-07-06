@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 05-07-2024 a las 01:36:19
+-- Tiempo de generación: 06-07-2024 a las 04:18:11
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -30,7 +30,7 @@ SET time_zone = "+00:00";
 CREATE TABLE `clientes` (
   `id` int(11) NOT NULL,
   `nombre_completo` varchar(250) NOT NULL,
-  `telefono` int(250) NOT NULL,
+  `telefono` varchar(10) DEFAULT NULL,
   `email` varchar(250) NOT NULL,
   `direccion` varchar(250) NOT NULL,
   `especificaciones_direccion` varchar(250) NOT NULL,
@@ -42,8 +42,8 @@ CREATE TABLE `clientes` (
 --
 
 INSERT INTO `clientes` (`id`, `nombre_completo`, `telefono`, `email`, `direccion`, `especificaciones_direccion`, `rol_id`) VALUES
-(6, 'alma', 12345678, 'alma@gmail.com', 'lopez', 'lejos', 1),
-(7, 'andres', 1234567, 'andy@gmail.com', 'lopez', 'lavanderia', 2);
+(6, 'alma', '9876543210', 'alma@gmail.com', 'lopez', 'lejos', 1),
+(7, 'andres', '1234567890', 'andy@gmail.com', 'lopez', 'lavanderia', 2);
 
 -- --------------------------------------------------------
 
@@ -89,7 +89,7 @@ ALTER TABLE `roles`
 -- AUTO_INCREMENT de la tabla `clientes`
 --
 ALTER TABLE `clientes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT de la tabla `roles`

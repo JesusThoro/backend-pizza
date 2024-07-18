@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 05-07-2024 a las 01:36:19
+-- Tiempo de generación: 18-07-2024 a las 02:54:35
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -34,7 +34,7 @@ CREATE TABLE `clientes` (
   `email` varchar(250) NOT NULL,
   `direccion` varchar(250) NOT NULL,
   `especificaciones_direccion` varchar(250) NOT NULL,
-  `rol_id` int(11) DEFAULT NULL
+  `rol_id` int(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -43,7 +43,10 @@ CREATE TABLE `clientes` (
 
 INSERT INTO `clientes` (`id`, `nombre_completo`, `telefono`, `email`, `direccion`, `especificaciones_direccion`, `rol_id`) VALUES
 (6, 'alma', 12345678, 'alma@gmail.com', 'lopez', 'lejos', 1),
-(7, 'andres', 1234567, 'andy@gmail.com', 'lopez', 'lavanderia', 2);
+(7, 'andres', 1234567, 'andy@gmail.com', 'lopez', 'lavanderia', 2),
+(43, 'eduardo', 1234567891, 'luis@gmail.com', 'Andador del músico ', '2345678', 1),
+(44, 'luis', 1234567890, 'luis@gmail.com', 'Andador del músico ', 'dfsfgg', 1),
+(45, 'ector', 1234567890, 'luis@gmail.com', 'Andador del músico ', '2345678', 2);
 
 -- --------------------------------------------------------
 
@@ -89,7 +92,7 @@ ALTER TABLE `roles`
 -- AUTO_INCREMENT de la tabla `clientes`
 --
 ALTER TABLE `clientes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
 
 --
 -- AUTO_INCREMENT de la tabla `roles`

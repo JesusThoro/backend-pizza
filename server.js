@@ -3,11 +3,17 @@ const mysql = require('mysql');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 
+
 const app = express();
 const port = 3001;
 
+
 app.use(cors());
+
+
+app.use(cors()); // Usa el middleware cors
 app.use(bodyParser.json());
+
 
 const DB = mysql.createConnection({
     host: 'localhost',
@@ -16,12 +22,14 @@ const DB = mysql.createConnection({
     database: 'basededatos',
 });
 
+
 DB.connect((err) => {
     if (err) {
         throw err;
     }
     console.log('Conexión exitosa');
 });
+
 
 // Ruta para obtener todos los usuarios
 app.get('/usuarios', (req, res) => {
@@ -35,7 +43,10 @@ app.get('/usuarios', (req, res) => {
     });
 });
 
-// Ruta para registrar un nuevo usuario desde el administrador 
+
+
+// Ruta para registrar un nuevo usuario
+
 app.post('/register_user', (req, res) => {
     const { nombre_completo, telefono, email, direccion, especificaciones_direccion, rol_id } = req.body;
     const query = 'INSERT INTO clientes (nombre_completo, telefono, email, direccion, especificaciones_direccion, rol_id) VALUES (?, ?, ?, ?, ?, ?)';

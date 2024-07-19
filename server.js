@@ -3,7 +3,6 @@ const mysql = require('mysql');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 
-
 const app = express();
 const port = 3001;
 
@@ -103,6 +102,58 @@ app.post('/login', (req, res) => {
         }
     });
 });
+// Ruta para obtener todos los productos
+app.get('/productos', (req, res) => {
+    const query = "SELECT * FROM productos";
+    DB.query(query, (err, result) => {
+        if (err) {
+            res.status(500).send(err);
+            return;
+        }
+        res.json(result);
+    });
+});
+
+// Ruta para agregar un nuevo producto
+app.post('/productos', (req, res) => {
+    const { name, description, price_small, price_medium, price_large, cheese_crust_price } = req.body;
+    const query = "INSERT INTO productos (name, description, price_small, price_medium, price_large, cheese_crust_price) VALUES (?, ?, ?, ?, ?, ?)";
+    DB.query(query, [name, description, price_small, price_medium, price_large, cheese_crust_price], (err, result) => {
+        if (err) {
+            res.status(500).send(err);
+            return;
+        }
+        res.json({ message: 'Producto agregado exitosamente' });
+    });
+});
+
+// Ruta para actualizar un producto
+app.put('/productos/:id', (req, res) => {
+    const { id } = req.params;
+    const { name, description, price_small, price_medium, price_large, cheese_crust_price } = req.body;
+    const query = "UPDATE productos SET name = ?, description = ?, price_small = ?, price_medium = ?, price_large = ?, cheese_crust_price = ? WHERE id = ?";
+    DB.query(query, [name, description, price_small, price_medium, price_large, cheese_crust_price, id], (err, result) => {
+        if (err) {
+            res.status(500).send(err);
+            return;
+        }
+        res.json({ message: 'Producto actualizado exitosamente' });
+    });
+});
+
+// Ruta para eliminar un producto
+app.delete('/productos/:id', (req, res) => {
+    const { id } = req.params;
+    const query = "DELETE FROM productos WHERE id = ?";
+    DB.query(query, [id], (err, result) => {
+        if (err) {
+            res.status(500).send(err);
+            return;
+        }
+        res.json({ message: 'Producto eliminado exitosamente' });
+    });
+});
+
 
 app.listen(port, () => {
     console.log(`Servidor corriendo en http://localhost:${port}`);

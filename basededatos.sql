@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 09-08-2024 a las 04:19:06
+-- Tiempo de generación: 09-08-2024 a las 16:42:27
 -- Versión del servidor: 10.4.28-MariaDB
 -- Versión de PHP: 8.2.4
 
@@ -96,6 +96,7 @@ CREATE TABLE `pedido_pizza_detalle` (
 CREATE TABLE `productos` (
   `id` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
+  `tipo` enum('pizza','refresco','antojito') NOT NULL,
   `description` text NOT NULL,
   `price` decimal(10,2) NOT NULL,
   `price_small` decimal(10,2) NOT NULL,
@@ -109,8 +110,9 @@ CREATE TABLE `productos` (
 -- Volcado de datos para la tabla `productos`
 --
 
-INSERT INTO `productos` (`id`, `name`, `description`, `price`, `price_small`, `price_medium`, `price_large`, `cheese_crust_price`, `url_imagen`) VALUES
-(13, 'pizza hawayana', 'piña, queso, tomate', 0.00, 900.00, 130.00, 140.00, 12.00, 'http://localhost:3001/uploads/1723169384511.jpg');
+INSERT INTO `productos` (`id`, `name`, `tipo`, `description`, `price`, `price_small`, `price_medium`, `price_large`, `cheese_crust_price`, `url_imagen`) VALUES
+(13, 'pizza hawayana', 'pizza', 'piña, queso, tomate', 0.00, 900.00, 130.00, 140.00, 12.00, 'http://localhost:3001/uploads/1723169384511.jpg'),
+(29, 'Pepsi', 'pizza', 'sin azucar', 0.00, 0.00, 0.00, 0.00, 0.00, NULL);
 
 -- --------------------------------------------------------
 
@@ -195,7 +197,7 @@ ALTER TABLE `pedido_pizza_detalle`
 -- AUTO_INCREMENT de la tabla `productos`
 --
 ALTER TABLE `productos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 --
 -- AUTO_INCREMENT de la tabla `roles`

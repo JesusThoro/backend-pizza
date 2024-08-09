@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 26-07-2024 a las 07:10:55
--- Versión del servidor: 10.4.32-MariaDB
--- Versión de PHP: 8.2.12
+-- Tiempo de generación: 09-08-2024 a las 04:19:06
+-- Versión del servidor: 10.4.28-MariaDB
+-- Versión de PHP: 8.2.4
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -83,22 +83,9 @@ CREATE TABLE `pedido_pizza_detalle` (
   `producto_id` int(11) DEFAULT NULL,
   `tamaño` enum('small','medium','large') DEFAULT NULL,
   `cantidad` int(11) DEFAULT NULL,
-  `precio` decimal(10,2) DEFAULT NULL
+  `precio` decimal(10,2) DEFAULT NULL,
+  `estado` enum('pendiente','atendido','rechazado') DEFAULT 'pendiente'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `pedido_pizza_detalle`
---
-
-INSERT INTO `pedido_pizza_detalle` (`id`, `pedido_pizza_id`, `producto_id`, `tamaño`, `cantidad`, `precio`) VALUES
-(1, 1, 1, '', 1, 2.00),
-(2, 2, 1, '', 4, 0.00),
-(3, 3, 1, '', 7, 14.00),
-(4, 4, 2, '', 2, 4.00),
-(5, 4, 3, '', 1, 0.00),
-(6, 5, 1, '', 5, 0.00),
-(7, 5, 3, '', 2, 4.00),
-(8, 6, 2, '', 8, 16.00);
 
 -- --------------------------------------------------------
 
@@ -114,17 +101,16 @@ CREATE TABLE `productos` (
   `price_small` decimal(10,2) NOT NULL,
   `price_medium` decimal(10,2) NOT NULL,
   `price_large` decimal(10,2) NOT NULL,
-  `cheese_crust_price` decimal(10,2) NOT NULL
+  `cheese_crust_price` decimal(10,2) NOT NULL,
+  `url_imagen` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `productos`
 --
 
-INSERT INTO `productos` (`id`, `name`, `description`, `price`, `price_small`, `price_medium`, `price_large`, `cheese_crust_price`) VALUES
-(1, 'Pizza de peperoni', 'pizza de peperoni, con queso, salsa de tomate, y queso parmesano.', 0.00, 10.00, 20.00, 30.00, 5.00),
-(2, 'Pizza Hawaiana', 'queso, piña, jamon', 0.00, 10.00, 12.00, 14.00, 5.00),
-(3, 'Pizza Mexicana', 'Queso, Chorizo,  Peperoni, Cebolla, Jalapeño', 0.00, 11.00, 13.00, 15.00, 5.00);
+INSERT INTO `productos` (`id`, `name`, `description`, `price`, `price_small`, `price_medium`, `price_large`, `cheese_crust_price`, `url_imagen`) VALUES
+(13, 'pizza hawayana', 'piña, queso, tomate', 0.00, 900.00, 130.00, 140.00, 12.00, 'http://localhost:3001/uploads/1723169384511.jpg');
 
 -- --------------------------------------------------------
 
@@ -209,7 +195,7 @@ ALTER TABLE `pedido_pizza_detalle`
 -- AUTO_INCREMENT de la tabla `productos`
 --
 ALTER TABLE `productos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT de la tabla `roles`
@@ -238,7 +224,7 @@ ALTER TABLE `pedido_pizza`
 --
 ALTER TABLE `pedido_pizza_detalle`
   ADD CONSTRAINT `pedido_pizza_detalle_ibfk_1` FOREIGN KEY (`pedido_pizza_id`) REFERENCES `pedido_pizza` (`id`),
-  ADD CONSTRAINT `pedido_pizza_detalle_ibfk_2` FOREIGN KEY (`producto_id`) REFERENCES `productos` (`id`);
+  ADD CONSTRAINT `pedido_pizza_detalle_ibfk_2` FOREIGN KEY (`producto_id`) REFERENCES `productos` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

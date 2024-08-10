@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 09-08-2024 a las 04:19:06
--- Versión del servidor: 10.4.28-MariaDB
--- Versión de PHP: 8.2.4
+-- Tiempo de generación: 10-08-2024 a las 03:50:17
+-- Versión del servidor: 10.4.32-MariaDB
+-- Versión de PHP: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -44,8 +44,7 @@ CREATE TABLE `clientes` (
 INSERT INTO `clientes` (`id`, `nombre_completo`, `telefono`, `email`, `direccion`, `especificaciones_direccion`, `rol_id`) VALUES
 (7, 'andres', 1234567890, 'andy@gmail.com', 'lopez', 'lavanderia', 2),
 (44, 'luis', 1234567890, 'luis@gmail.com', 'Andador del músico ', 'dfsfgg', 1),
-(46, 'Aquim', 2147483647, '31adbixd31@gmail.com', 'Independencia 32 B', 'Frente al CBTis', 1),
-(47, 'Yhair', 2147483647, '31adbixd31@gmail.com', 'Independencia 32 B', '1234', 1);
+(46, 'omar', 1111111111, '31adbixd31@gmail.com', 'Independencia 32 B', 'Frente al CBTis', 2);
 
 -- --------------------------------------------------------
 
@@ -68,7 +67,6 @@ INSERT INTO `pedido_pizza` (`id`, `cliente_id`, `fecha_pedido`) VALUES
 (2, 46, '2024-07-25 19:13:17'),
 (3, 44, '2024-07-25 19:14:21'),
 (4, 44, '2024-07-25 19:20:44'),
-(5, 47, '2024-07-25 19:22:16'),
 (6, 44, '2024-07-25 20:00:38');
 
 -- --------------------------------------------------------
@@ -110,7 +108,7 @@ CREATE TABLE `productos` (
 --
 
 INSERT INTO `productos` (`id`, `name`, `description`, `price`, `price_small`, `price_medium`, `price_large`, `cheese_crust_price`, `url_imagen`) VALUES
-(13, 'pizza hawayana', 'piña, queso, tomate', 0.00, 900.00, 130.00, 140.00, 12.00, 'http://localhost:3001/uploads/1723169384511.jpg');
+(13, 'pizza hawayana', 'piña, queso, tomate', 0.00, 900.00, 130.00, 140.00, 12.00, 'http://localhost:3001/uploads/1723246001643.jpg');
 
 -- --------------------------------------------------------
 
@@ -217,7 +215,7 @@ ALTER TABLE `clientes`
 -- Filtros para la tabla `pedido_pizza`
 --
 ALTER TABLE `pedido_pizza`
-  ADD CONSTRAINT `pedido_pizza_ibfk_1` FOREIGN KEY (`cliente_id`) REFERENCES `clientes` (`id`);
+  ADD CONSTRAINT `pedido_pizza_ibfk_1` FOREIGN KEY (`cliente_id`) REFERENCES `clientes` (`id`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `pedido_pizza_detalle`

@@ -1,30 +1,28 @@
 const express = require('express');
-const mysql = require('mysql');
+const mysql = require('mysql2/promise');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const jwt = require('jsonwebtoken');
+const axios = require('axios');
+
 const app = express();
 const port = 3001;
-
 
 app.use(cors());
 app.use(bodyParser.json());
 
 // Configuración de la base de datos
-const DB = mysql.createConnection({
+const DB = mysql.createPool({
     host: 'localhost',
     user: 'root',
     password: '', // Asegúrate de que la contraseña sea la correcta para tu base de datos
     database: 'basededatos',
-});
-
-DB.connect((err) => {
-    if (err) {
-        throw err;
-    }
-    console.log('Conexión exitosa');
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 });
 
 // Configuración de Multer para subir imágenes
@@ -41,167 +39,89 @@ const upload = multer({ storage });
 
 app.use('/uploads', express.static('uploads'));
 
-// Ruta para obtener todos los productos
-app.get('/productos', (req, res) => {
-    const query = "SELECT * FROM productos";
-    DB.query(query, (err, result) => {
-        if (err) {
-            res.status(500).send(err);
-            return;
-        }
-        res.json(result);
-    });
-});
-
-// Ruta para agregar un nuevo producto
-app.post('/productos', upload.single('image'), (req, res) => {
-    const { name, description, price_small, price_medium, price_large, cheese_crust_price } = req.body;
-    const imageUrl = req.file ? `http://localhost:3001/uploads/${req.file.filename}` : null;
-
-    const query = "INSERT INTO productos (name, description, price_small, price_medium, price_large, cheese_crust_price, url_imagen) VALUES (?, ?, ?, ?, ?, ?, ?)";
+// Middleware para verificar el token
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
     
-    DB.query(query, [name, description, price_small, price_medium, price_large, cheese_crust_price, imageUrl], (err, result) => {
-        if (err) {
-            res.status(500).send(err);
-            return;
-        }
-        res.json({ message: 'Producto agregado exitosamente' });
+    if (token == null) return res.sendStatus(401);
+    
+    jwt.verify(token, 'tu_clave_secreta', (err, user) => {
+        if (err) return res.sendStatus(403);
+        req.user = user;
+        next();
     });
-});
-
-// Ruta para actualizar un producto
-
-app.put('/productos/:id', upload.single('image'), (req, res) => {
-    const { id } = req.params;
-    const { name, description, price_small, price_medium, price_large, cheese_crust_price } = req.body;
-    let updateQuery = "UPDATE productos SET name = ?, description = ?, price_small = ?, price_medium = ?, price_large = ?, cheese_crust_price = ? WHERE id = ?";
-    let updateValues = [name, description, price_small, price_medium, price_large, cheese_crust_price, id];
-
-    if (req.file) {
-        // Si se sube una nueva imagen, actualizar la URL de la imagen
-        updateQuery = "UPDATE productos SET name = ?, description = ?, price_small = ?, price_medium = ?, price_large = ?, cheese_crust_price = ?, url_imagen = ? WHERE id = ?";
-        const newImagePath = req.file.path;
-        updateValues = [name, description, price_small, price_medium, price_large, cheese_crust_price, newImagePath, id];
-        
-        // Eliminar la imagen anterior si existe
-        const oldImagePath = req.body.oldImage;
-        if (oldImagePath) {
-            console.log(`Attempting to delete old image at: ${oldImagePath}`);
-            // Asegurarse de que la ruta del archivo sea relativa a la carpeta de trabajo
-            const fullOldImagePath = path.join(__dirname, oldImagePath);
-            if (fs.existsSync(fullOldImagePath)) {
-                fs.unlink(fullOldImagePath, (err) => {
-                    if (err) {
-                        console.error(`Error deleting old image: ${err}`);
-                        return res.status(500).json({ message: 'Error deleting old image' });
-                    }
-                    console.log(`Old image deleted successfully.`);
-                });
-            } else {
-                console.log(`Old image not found at: ${fullOldImagePath}`);
-            }
-        }
-    }
-
-    DB.query(updateQuery, updateValues, (err, result) => {
-        if (err) {
-            console.error('Error updating product:', err);
-            return res.status(500).send(err);
-        }
-        res.json({ message: 'Producto actualizado exitosamente' });
-    });
-});
-
-// Ruta para eliminar un producto
-app.delete('/productos/:id', (req, res) => {
-    const { id } = req.params;
-
-    // Primero, obtén el nombre del archivo de la imagen asociada al producto
-    DB.query('SELECT url_imagen FROM productos WHERE id = ?', [id], (err, results) => {
-        if (err) {
-            console.error('Error al obtener el producto:', err);
-            res.status(500).send('Error al obtener el producto');
-            return;
-        }
-
-        if (results.length === 0) {
-            res.status(404).json({ message: 'Producto no encontrado' });
-            return;
-        }
-
-        const urlImagen = results[0].url_imagen;
-
-        // Elimina el producto de la base de datos
-        DB.query('DELETE FROM productos WHERE id = ?', [id], (err, result) => {
-            if (err) {
-                console.error('Error al eliminar el producto:', err);
-                res.status(500).send('Error al eliminar el producto');
-                return;
-            }
-
-            // Elimina la imagen del sistema de archivos si existe
-            if (urlImagen) {
-                // Asumiendo que url_imagen contiene solo el nombre del archivo
-                const fileName = path.basename(urlImagen); // Extrae el nombre del archivo
-                const filePath = path.join(__dirname, 'uploads', fileName);
-                fs.unlink(filePath, (err) => {
-                    if (err) {
-                        console.error('Error al eliminar la imagen:', err);
-                        // Responde con éxito a pesar del error en la eliminación de la imagen
-                        res.status(500).send('Error al eliminar la imagen');
-                        return;
-                    }
-                    // Responde con éxito solo después de eliminar el producto
-                    res.json({ message: 'Producto eliminado exitosamente' });
-                });
-            } else {
-                // Responde con éxito si no hay imagen para eliminar
-                res.json({ message: 'Producto eliminado exitosamente' });
-            }
-        });
-    });
-});
+};
 
 // Ruta para obtener todos los usuarios
-app.get('/usuarios', (req, res) => {
-    const query = 'SELECT * FROM clientes';
-    DB.query(query, (err, result) => {
-        if (err) {
-            res.status(500).send(err);
-            return;
-        }
-        res.json(result);
-    });
+app.get('/usuarios', async (req, res) => {
+    try {
+        const [rows] = await DB.query('SELECT * FROM clientes');
+        res.json(rows);
+    } catch (err) {
+        res.status(500).send(err);
+    }
 });
 
 // Ruta para registrar un nuevo usuario
-app.post('/register_user', (req, res) => {
+app.post('/register_user', async (req, res) => {
     const { nombre_completo, telefono, email, direccion, especificaciones_direccion, rol_id } = req.body;
-    const query = 'INSERT INTO clientes (nombre_completo, telefono, email, direccion, especificaciones_direccion, rol_id) VALUES (?, ?, ?, ?, ?, ?)';
-    DB.query(query, [nombre_completo, telefono, email, direccion, especificaciones_direccion, rol_id], (err, result) => {
-        if (err) {
-            console.error('Error en la consulta SQL:', err);
-            res.status(500).json({ error: 'Error interno del servidor' });
-            return;
-        }
+    try {
+        await DB.query('INSERT INTO clientes (nombre_completo, telefono, email, direccion, especificaciones_direccion, rol_id) VALUES (?, ?, ?, ?, ?, ?)', [nombre_completo, telefono, email, direccion, especificaciones_direccion, rol_id]);
         res.json({ message: 'Usuario registrado exitosamente' });
-    });
+    } catch (err) {
+        console.error('Error en la consulta SQL:', err);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
 });
 
-// Ruta para iniciar sesión
-app.post('/login', (req, res) => {
-    const { fullName, number } = req.body;
-    const query = 'SELECT id, nombre_completo, telefono, rol_id FROM clientes WHERE nombre_completo = ? AND telefono = ?';
-    DB.query(query, [fullName, number], (err, result) => {
-        if (err) {
-            console.error('Error en la consulta SQL:', err);
-            res.status(500).send(err);
-            return;
+// Ruta para obtener los datos del perfil del usuario
+app.get('/api/user/profile', authenticateToken, async (req, res) => {
+    const userId = req.user.id;
+    const query = 'SELECT nombre_completo, email, telefono, direccion, especificaciones_direccion  FROM clientes WHERE id = ?';
+
+    try {
+        const [results] = await DB.query(query, [userId]);
+        if (results.length > 0) {
+            res.json(results[0]);
+        } else {
+            res.status(404).send('Usuario no encontrado');
         }
-        if (result.length > 0) {
-            const user = result[0];
+    } catch (err) {
+        console.error('Error al obtener los datos del usuario:', err);
+        res.status(500).send('Error en el servidor');
+    }
+});
+
+// Ruta para actualizar los datos del perfil del usuario
+app.get('/api/user/:id', authenticateToken, async (req, res) => {
+    const userId = req.params.id;
+    try {
+      const [results] = await DB.query('SELECT * FROM clientes WHERE id = ?', [userId]);
+      if (results.length > 0) {
+        res.json(results[0]);
+      } else {
+        res.status(404).send('Usuario no encontrado');
+      }
+    } catch (err) {
+      console.error('Error al obtener los datos del usuario:', err);
+      res.status(500).send('Error en el servidor');
+    }
+  });
+  
+
+// Ruta para iniciar sesión
+app.post('/login', async (req, res) => {
+    const { fullName, number } = req.body;
+    try {
+        const [rows] = await DB.query('SELECT id, nombre_completo, telefono, rol_id FROM clientes WHERE nombre_completo = ? AND telefono = ?', [fullName, number]);
+        if (rows.length > 0) {
+            const user = rows[0];
+            const token = jwt.sign({ id: user.id, rol_id: user.rol_id }, 'tu_clave_secreta', { expiresIn: '1h' });
+
             res.json({
                 message: 'Inicio de sesión exitoso',
+                token,
                 user: {
                     id: user.id,
                     nombre_completo: user.nombre_completo,
@@ -212,136 +132,167 @@ app.post('/login', (req, res) => {
         } else {
             res.status(401).json({ message: 'Credenciales incorrectas' });
         }
-    });
+    } catch (err) {
+        console.error('Error en la consulta SQL:', err);
+        res.status(500).send(err);
+    }
+});
+
+// Ruta para obtener los datos del usuario por ID
+app.get('/api/user/:id', async (req, res) => {
+    const userId = req.params.id;
+    try {
+        const [results] = await DB.query('SELECT * FROM clientes WHERE id = ?', [userId]);
+        if (results.length > 0) {
+            res.json(results[0]);
+        } else {
+            res.status(404).send('Usuario no encontrado');
+        }
+    } catch (err) {
+        console.error('Error fetching user data:', err);
+        res.status(500).json({ error: 'Error fetching user data' });
+    }
+});
+
+// Ruta para eliminar detalles de pedido relacionados con un pedido
+app.delete('/detalles/pedido/:pedidoId', async (req, res) => {
+    const { pedidoId } = req.params;
+    try {
+        await DB.query("DELETE FROM pedido_pizza_detalle WHERE pedido_pizza_id = ?", [pedidoId]);
+        res.json({ message: 'Detalles de pedido eliminados exitosamente' });
+    } catch (err) {
+        console.error('Error al eliminar detalles de pedido:', err);
+        res.status(500).send(err);
+    }
+});
+
+// Ruta para eliminar pedidos relacionados con un cliente
+app.delete('/pedidos/cliente/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [pedidos] = await DB.query("SELECT id FROM pedido_pizza WHERE cliente_id = ?", [id]);
+
+        for (const pedido of pedidos) {
+            await DB.query("DELETE FROM pedido_pizza_detalle WHERE pedido_pizza_id = ?", [pedido.id]);
+        }
+
+        await DB.query("DELETE FROM pedido_pizza WHERE cliente_id = ?", [id]);
+
+        res.json({ message: 'Pedidos y sus detalles eliminados exitosamente' });
+    } catch (err) {
+        console.error('Error al eliminar pedidos y detalles:', err);
+        res.status(500).send(err);
+    }
+});
+
+// Ruta para eliminar un cliente
+app.delete('/clientes/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        await axios.delete(`http://localhost:3001/pedidos/cliente/${id}`);
+        await DB.query("DELETE FROM clientes WHERE id = ?", [id]);
+
+        res.json({ message: 'Cliente eliminado exitosamente' });
+    } catch (err) {
+        console.error('Error al eliminar cliente:', err);
+        res.status(500).send(err);
+    }
+});
+
+// Ruta para actualizar un cliente
+app.put('/clientes/:id', async (req, res) => {
+    const { id } = req.params;
+    const { nombre_completo, telefono, email, direccion, especificaciones_direccion, rol_id } = req.body;
+
+    const query = 'UPDATE clientes SET nombre_completo = ?, telefono = ?, email = ?, direccion = ?, especificaciones_direccion = ?, rol_id = ? WHERE id = ?';
+
+    try {
+        const [result] = await DB.query(query, [nombre_completo, telefono, email, direccion, especificaciones_direccion, rol_id, id]);
+
+        if (result.affectedRows > 0) {
+            res.status(200).json({ message: 'Usuario actualizado correctamente' });
+        } else {
+            res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+    } catch (error) {
+        console.error('Error al actualizar usuario:', error);
+        res.status(500).json({ message: 'Error en el servidor', error });
+    }
 });
 
 // Ruta para obtener todos los productos
-app.get('/productos', (req, res) => {
-    const query = "SELECT * FROM productos";
-    DB.query(query, (err, result) => {
-        if (err) {
-            res.status(500).send(err);
-            return;
-        }
-        res.json(result);
-    });
+app.get('/productos', async (req, res) => {
+    try {
+        const [rows] = await DB.query("SELECT * FROM productos");
+        res.json(rows);
+    } catch (err) {
+        res.status(500).send(err);
+    }
+});
+
+// Ruta para agregar un nuevo producto
+app.post('/productos', upload.single('image'), async (req, res) => {
+    const { name, description, price_small, price_medium, price_large, cheese_crust_price } = req.body;
+    const imageUrl = req.file ? `http://localhost:3001/uploads/${req.file.filename}` : null;
+
+    const query = "INSERT INTO productos (name, description, price_small, price_medium, price_large, cheese_crust_price, url_imagen) VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+    try {
+        await DB.query(query, [name, description, price_small, price_medium, price_large, cheese_crust_price, imageUrl]);
+        res.json({ message: 'Producto agregado exitosamente' });
+    } catch (err) {
+        res.status(500).send(err);
+    }
 });
 
 // Ruta para actualizar un producto
-app.put('/productos/:id', (req, res) => {
+app.put('/productos/:id', upload.single('image'), async (req, res) => {
     const { id } = req.params;
     const { name, description, price_small, price_medium, price_large, cheese_crust_price } = req.body;
-    const query = "UPDATE productos SET name = ?, description = ?, price_small = ?, price_medium = ?, price_large = ?, cheese_crust_price = ? WHERE id = ?";
-    DB.query(query, [name, description, price_small, price_medium, price_large, cheese_crust_price, id], (err, result) => {
-        if (err) {
-            res.status(500).send(err);
-            return;
+    let updateQuery = "UPDATE productos SET name = ?, description = ?, price_small = ?, price_medium = ?, price_large = ?, cheese_crust_price = ? WHERE id = ?";
+    let updateValues = [name, description, price_small, price_medium, price_large, cheese_crust_price, id];
+
+    if (req.file) {
+        // Si se sube una nueva imagen, actualizar la URL de la imagen
+        const newImagePath = `http://localhost:3001/uploads/${req.file.filename}`;
+        updateQuery = "UPDATE productos SET name = ?, description = ?, price_small = ?, price_medium = ?, price_large = ?, cheese_crust_price = ?, url_imagen = ? WHERE id = ?";
+        updateValues = [name, description, price_small, price_medium, price_large, cheese_crust_price, newImagePath, id];
+
+        // Eliminar la imagen anterior si existe
+        const oldImagePath = req.body.oldImage;
+        if (oldImagePath) {
+            const oldImageFilename = path.basename(oldImagePath);
+            const oldImagePathFull = path.join(__dirname, 'uploads', oldImageFilename);
+
+            fs.unlink(oldImagePathFull, (err) => {
+                if (err) {
+                    console.error('Error al eliminar la imagen anterior:', err);
+                } else {
+                    console.log('Imagen anterior eliminada exitosamente');
+                }
+            });
         }
+    }
+
+    try {
+        await DB.query(updateQuery, updateValues);
         res.json({ message: 'Producto actualizado exitosamente' });
-    });
+    } catch (err) {
+        res.status(500).send(err);
+    }
 });
 
 // Ruta para eliminar un producto
-app.delete('/productos/:id', (req, res) => {
+app.delete('/productos/:id', async (req, res) => {
     const { id } = req.params;
-    const query = "DELETE FROM productos WHERE id = ?";
-    DB.query(query, [id], (err, result) => {
-        if (err) {
-            res.status(500).send(err);
-            return;
-        }
+    try {
+        await DB.query("DELETE FROM productos WHERE id = ?", [id]);
         res.json({ message: 'Producto eliminado exitosamente' });
-    });
-});
-
-// Ruta para registrar un nuevo pedido
-app.post('/register_order', (req, res) => {
-    const orders = req.body;
-    const cliente_id = orders[0].cliente_id;
-
-    // Insertar en la tabla pedido_pizza
-    const queryPedidoPizza = 'INSERT INTO pedido_pizza (cliente_id, fecha_pedido) VALUES (?, NOW())';
-
-    DB.query(queryPedidoPizza, [cliente_id], (err, result) => {
-        if (err) {
-            console.error('Error en la consulta SQL:', err);
-            res.status(500).json({ error: 'Error interno del servidor al registrar el pedido' });
-            return;
-        }
-        const pedido_pizza_id = result.insertId;
-
-        // Preparar los detalles del pedido
-        const queryPedidoPizzaDetalle = 'INSERT INTO pedido_pizza_detalle (pedido_pizza_id, producto_id, tamaño, cantidad, precio) VALUES ?';
-        const values = orders.map(order => [
-            pedido_pizza_id,
-            order.producto_id,
-            order.tamano,
-            order.cantidad,
-            order.precio
-        ]);
-
-        // Insertar en la tabla pedido_pizza_detalle
-        DB.query(queryPedidoPizzaDetalle, [values], (err, result) => {
-            if (err) {
-                console.error('Error en la consulta SQL:', err);
-                res.status(500).json({ error: 'Error interno del servidor al registrar los detalles del pedido' });
-                return;
-            }
-            res.json({ message: 'Pedido registrado exitosamente' });
-        });
-    });
-});
-
-// Ruta para obtener los pedidos agrupados por cliente_id
-app.get('/pedidos', (req, res) => {
-    const query = `
-        SELECT 
-            pp.cliente_id,
-            GROUP_CONCAT(p.name ORDER BY ppd.id SEPARATOR ', ') AS nombre_pizza,
-            GROUP_CONCAT(ppd.tamaño ORDER BY ppd.id SEPARATOR ', ') AS tamano,
-            GROUP_CONCAT(ppd.cantidad ORDER BY ppd.id SEPARATOR ', ') AS cantidad,
-            GROUP_CONCAT(ppd.precio ORDER BY ppd.id SEPARATOR ', ') AS precio
-        FROM pedido_pizza pp
-        JOIN pedido_pizza_detalle ppd ON pp.id = ppd.pedido_pizza_id
-        JOIN productos p ON ppd.producto_id = p.id
-        GROUP BY pp.cliente_id
-    `;
-
-    DB.query(query, (err, result) => {
-        if (err) {
-            console.error('Error en la consulta SQL:', err);
-            res.status(500).send(err);
-            return;
-        }
-        res.json(result);
-    });
-});
-
-// Ruta para obtener los pedidos de un usuario específico
-app.get('/pedidos/:cliente_id', (req, res) => {
-    const { cliente_id } = req.params;
-    const query = `
-        SELECT 
-            p.name AS nombre_pizza,
-            ppd.tamaño AS tamano,
-            ppd.cantidad AS cantidad,
-            ppd.precio AS precio
-        FROM pedido_pizza pp
-        JOIN pedido_pizza_detalle ppd ON pp.id = ppd.pedido_pizza_id
-        JOIN productos p ON ppd.producto_id = p.id
-        WHERE pp.cliente_id = ?
-    `;
-
-    DB.query(query, [cliente_id], (err, result) => {
-        if (err) {
-            console.error('Error en la consulta SQL:', err);
-            res.status(500).send(err);
-            return;
-        }
-        res.json(result);
-    });
+    } catch (err) {
+        res.status(500).send(err);
+    }
 });
 
 app.listen(port, () => {
-    console.log(`Servidor ejecutándose en http://localhost:${port}`);
+    console.log(`Servidor corriendo en http://localhost:${port}`);
 });

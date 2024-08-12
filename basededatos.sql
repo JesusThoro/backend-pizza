@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 10-08-2024 a las 03:50:17
+-- Tiempo de generación: 12-08-2024 a las 18:26:47
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -20,6 +20,27 @@ SET time_zone = "+00:00";
 --
 -- Base de datos: `basededatos`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `antojitos`
+--
+
+CREATE TABLE `antojitos` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(255) NOT NULL,
+  `descripcion` text NOT NULL,
+  `precio` decimal(10,2) NOT NULL,
+  `url_imagen` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `antojitos`
+--
+
+INSERT INTO `antojitos` (`id`, `nombre`, `descripcion`, `precio`, `url_imagen`) VALUES
+(4, 'nmnm', 'nmnm', 4343.00, 'uploads/1723449945878.png');
 
 -- --------------------------------------------------------
 
@@ -43,59 +64,52 @@ CREATE TABLE `clientes` (
 
 INSERT INTO `clientes` (`id`, `nombre_completo`, `telefono`, `email`, `direccion`, `especificaciones_direccion`, `rol_id`) VALUES
 (7, 'andres', 1234567890, 'andy@gmail.com', 'lopez', 'lavanderia', 2),
-(44, 'luis', 1234567890, 'luis@gmail.com', 'Andador del músico ', 'dfsfgg', 1),
-(46, 'omar', 1111111111, '31adbixd31@gmail.com', 'Independencia 32 B', 'Frente al CBTis', 2);
+(44, 'luis', 1234567899, 'luis@gmail.com', 'Andador del músico ', 'dfsfgg', 1),
+(46, 'omar', 1111111111, '31adbixd31@gmail.com', 'Independencia 32 B', 'Frente al CBTis', 1);
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `pedido_pizza`
+-- Estructura de tabla para la tabla `detalles_pedido`
 --
 
-CREATE TABLE `pedido_pizza` (
+CREATE TABLE `detalles_pedido` (
+  `id` int(11) NOT NULL,
+  `pedido_id` int(11) DEFAULT NULL,
+  `producto_id` int(11) DEFAULT NULL,
+  `producto_tipo` varchar(50) DEFAULT NULL,
+  `tamano` varchar(50) DEFAULT NULL,
+  `cantidad` int(11) DEFAULT NULL,
+  `precio` decimal(10,2) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `pedidos`
+--
+
+CREATE TABLE `pedidos` (
   `id` int(11) NOT NULL,
   `cliente_id` int(11) DEFAULT NULL,
-  `fecha_pedido` datetime DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `pedido_pizza`
---
-
-INSERT INTO `pedido_pizza` (`id`, `cliente_id`, `fecha_pedido`) VALUES
-(1, 44, '2024-07-25 19:12:28'),
-(2, 46, '2024-07-25 19:13:17'),
-(3, 44, '2024-07-25 19:14:21'),
-(4, 44, '2024-07-25 19:20:44'),
-(6, 44, '2024-07-25 20:00:38');
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `pedido_pizza_detalle`
---
-
-CREATE TABLE `pedido_pizza_detalle` (
-  `id` int(11) NOT NULL,
-  `pedido_pizza_id` int(11) DEFAULT NULL,
+  `fecha` datetime DEFAULT NULL,
   `producto_id` int(11) DEFAULT NULL,
-  `tamaño` enum('small','medium','large') DEFAULT NULL,
+  `tamano` varchar(50) DEFAULT NULL,
   `cantidad` int(11) DEFAULT NULL,
-  `precio` decimal(10,2) DEFAULT NULL,
-  `estado` enum('pendiente','atendido','rechazado') DEFAULT 'pendiente'
+  `precio` decimal(10,2) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `productos`
+-- Estructura de tabla para la tabla `pizzas`
 --
 
-CREATE TABLE `productos` (
+CREATE TABLE `pizzas` (
   `id` int(11) NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `description` text NOT NULL,
-  `price` decimal(10,2) NOT NULL,
+  `nombre` varchar(255) NOT NULL,
+  `descripcion` text NOT NULL,
+  `precio` decimal(10,2) NOT NULL,
   `price_small` decimal(10,2) NOT NULL,
   `price_medium` decimal(10,2) NOT NULL,
   `price_large` decimal(10,2) NOT NULL,
@@ -104,11 +118,33 @@ CREATE TABLE `productos` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Volcado de datos para la tabla `productos`
+-- Volcado de datos para la tabla `pizzas`
 --
 
-INSERT INTO `productos` (`id`, `name`, `description`, `price`, `price_small`, `price_medium`, `price_large`, `cheese_crust_price`, `url_imagen`) VALUES
-(13, 'pizza hawayana', 'piña, queso, tomate', 0.00, 900.00, 130.00, 140.00, 12.00, 'http://localhost:3001/uploads/1723246001643.jpg');
+INSERT INTO `pizzas` (`id`, `nombre`, `descripcion`, `precio`, `price_small`, `price_medium`, `price_large`, `cheese_crust_price`, `url_imagen`) VALUES
+(18, 'fdgf', 'fggf', 0.00, 2.00, 44.00, 432324.00, 4432.00, 'uploads\\1723452278338.png');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `refrescos`
+--
+
+CREATE TABLE `refrescos` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(255) NOT NULL,
+  `descripcion` text NOT NULL,
+  `tamaño` varchar(100) DEFAULT NULL,
+  `precio` decimal(10,2) NOT NULL,
+  `url_imagen` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `refrescos`
+--
+
+INSERT INTO `refrescos` (`id`, `nombre`, `descripcion`, `tamaño`, `precio`, `url_imagen`) VALUES
+(9, 'administrador', 'jhjh', NULL, 433.00, 'uploads\\1723452405681.png');
 
 -- --------------------------------------------------------
 
@@ -134,6 +170,12 @@ INSERT INTO `roles` (`id`, `nombre`) VALUES
 --
 
 --
+-- Indices de la tabla `antojitos`
+--
+ALTER TABLE `antojitos`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indices de la tabla `clientes`
 --
 ALTER TABLE `clientes`
@@ -141,24 +183,27 @@ ALTER TABLE `clientes`
   ADD KEY `rol_id` (`rol_id`);
 
 --
--- Indices de la tabla `pedido_pizza`
+-- Indices de la tabla `detalles_pedido`
 --
-ALTER TABLE `pedido_pizza`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `cliente_id` (`cliente_id`);
+ALTER TABLE `detalles_pedido`
+  ADD PRIMARY KEY (`id`);
 
 --
--- Indices de la tabla `pedido_pizza_detalle`
+-- Indices de la tabla `pedidos`
 --
-ALTER TABLE `pedido_pizza_detalle`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `pedido_pizza_id` (`pedido_pizza_id`),
-  ADD KEY `producto_id` (`producto_id`);
+ALTER TABLE `pedidos`
+  ADD PRIMARY KEY (`id`);
 
 --
--- Indices de la tabla `productos`
+-- Indices de la tabla `pizzas`
 --
-ALTER TABLE `productos`
+ALTER TABLE `pizzas`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indices de la tabla `refrescos`
+--
+ALTER TABLE `refrescos`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -172,28 +217,40 @@ ALTER TABLE `roles`
 --
 
 --
+-- AUTO_INCREMENT de la tabla `antojitos`
+--
+ALTER TABLE `antojitos`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
 -- AUTO_INCREMENT de la tabla `clientes`
 --
 ALTER TABLE `clientes`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=48;
 
 --
--- AUTO_INCREMENT de la tabla `pedido_pizza`
+-- AUTO_INCREMENT de la tabla `detalles_pedido`
 --
-ALTER TABLE `pedido_pizza`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+ALTER TABLE `detalles_pedido`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT de la tabla `pedido_pizza_detalle`
+-- AUTO_INCREMENT de la tabla `pedidos`
 --
-ALTER TABLE `pedido_pizza_detalle`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+ALTER TABLE `pedidos`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT de la tabla `productos`
+-- AUTO_INCREMENT de la tabla `pizzas`
 --
-ALTER TABLE `productos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+ALTER TABLE `pizzas`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+
+--
+-- AUTO_INCREMENT de la tabla `refrescos`
+--
+ALTER TABLE `refrescos`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT de la tabla `roles`
@@ -210,19 +267,6 @@ ALTER TABLE `roles`
 --
 ALTER TABLE `clientes`
   ADD CONSTRAINT `clientes_ibfk_1` FOREIGN KEY (`rol_id`) REFERENCES `roles` (`id`);
-
---
--- Filtros para la tabla `pedido_pizza`
---
-ALTER TABLE `pedido_pizza`
-  ADD CONSTRAINT `pedido_pizza_ibfk_1` FOREIGN KEY (`cliente_id`) REFERENCES `clientes` (`id`) ON DELETE CASCADE;
-
---
--- Filtros para la tabla `pedido_pizza_detalle`
---
-ALTER TABLE `pedido_pizza_detalle`
-  ADD CONSTRAINT `pedido_pizza_detalle_ibfk_1` FOREIGN KEY (`pedido_pizza_id`) REFERENCES `pedido_pizza` (`id`),
-  ADD CONSTRAINT `pedido_pizza_detalle_ibfk_2` FOREIGN KEY (`producto_id`) REFERENCES `productos` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

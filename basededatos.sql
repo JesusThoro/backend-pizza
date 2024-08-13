@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 12-08-2024 a las 18:26:47
+-- Tiempo de generación: 13-08-2024 a las 04:29:18
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -83,6 +83,14 @@ CREATE TABLE `detalles_pedido` (
   `precio` decimal(10,2) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Volcado de datos para la tabla `detalles_pedido`
+--
+
+INSERT INTO `detalles_pedido` (`id`, `pedido_id`, `producto_id`, `producto_tipo`, `tamano`, `cantidad`, `precio`) VALUES
+(1, 29, 18, 'pizza', 'Mediana', 1, 44.00),
+(2, 29, 18, 'pizza', 'Mediana', 1, 44.00);
+
 -- --------------------------------------------------------
 
 --
@@ -92,12 +100,17 @@ CREATE TABLE `detalles_pedido` (
 CREATE TABLE `pedidos` (
   `id` int(11) NOT NULL,
   `cliente_id` int(11) DEFAULT NULL,
-  `fecha` datetime DEFAULT NULL,
-  `producto_id` int(11) DEFAULT NULL,
-  `tamano` varchar(50) DEFAULT NULL,
-  `cantidad` int(11) DEFAULT NULL,
-  `precio` decimal(10,2) DEFAULT NULL
+  `fecha` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `pedidos`
+--
+
+INSERT INTO `pedidos` (`id`, `cliente_id`, `fecha`) VALUES
+(27, 44, '2024-08-12 20:06:33'),
+(28, 44, '2024-08-12 20:07:59'),
+(29, 44, '2024-08-12 20:21:07');
 
 -- --------------------------------------------------------
 
@@ -144,7 +157,7 @@ CREATE TABLE `refrescos` (
 --
 
 INSERT INTO `refrescos` (`id`, `nombre`, `descripcion`, `tamaño`, `precio`, `url_imagen`) VALUES
-(9, 'administrador', 'jhjh', NULL, 433.00, 'uploads\\1723452405681.png');
+(9, 'administrador', 'jhjh', '12 mil', 433.00, 'uploads\\1723452405681.png');
 
 -- --------------------------------------------------------
 
@@ -186,13 +199,15 @@ ALTER TABLE `clientes`
 -- Indices de la tabla `detalles_pedido`
 --
 ALTER TABLE `detalles_pedido`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `pedido_id` (`pedido_id`);
 
 --
 -- Indices de la tabla `pedidos`
 --
 ALTER TABLE `pedidos`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `cliente_id` (`cliente_id`);
 
 --
 -- Indices de la tabla `pizzas`
@@ -232,13 +247,13 @@ ALTER TABLE `clientes`
 -- AUTO_INCREMENT de la tabla `detalles_pedido`
 --
 ALTER TABLE `detalles_pedido`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `pedidos`
 --
 ALTER TABLE `pedidos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 --
 -- AUTO_INCREMENT de la tabla `pizzas`
@@ -267,6 +282,18 @@ ALTER TABLE `roles`
 --
 ALTER TABLE `clientes`
   ADD CONSTRAINT `clientes_ibfk_1` FOREIGN KEY (`rol_id`) REFERENCES `roles` (`id`);
+
+--
+-- Filtros para la tabla `detalles_pedido`
+--
+ALTER TABLE `detalles_pedido`
+  ADD CONSTRAINT `detalles_pedido_ibfk_1` FOREIGN KEY (`pedido_id`) REFERENCES `pedidos` (`id`);
+
+--
+-- Filtros para la tabla `pedidos`
+--
+ALTER TABLE `pedidos`
+  ADD CONSTRAINT `pedidos_ibfk_1` FOREIGN KEY (`cliente_id`) REFERENCES `clientes` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

@@ -12,6 +12,7 @@ const port = 3001;
 
 app.use(cors());
 app.use(bodyParser.json());
+let pedidos = [];
 
 // Configuración de la base de datos
 const DB = mysql.createPool({
@@ -94,6 +95,7 @@ app.get('/api/user/:id', async (req, res) => {
     }
 });
 
+
 // Ruta para iniciar sesión
 app.post('/login', async (req, res) => {
     const { fullName, number } = req.body;
@@ -122,42 +124,101 @@ app.post('/login', async (req, res) => {
     }
 });
 
-// Ruta para obtener todos los pedidos
-app.get('/pedidos', (req, res) => {
-  try {
-    res.json(pedidos);
-  } catch (error) {
-    console.error('Error al obtener los pedidos:', error);
-    res.status(500).send('Error en el servidor');
-  }
-});
+app.get('/pedidos', async (req, res) => {
+    try {
+      const pedidos = await db.query(`
+        SELECT pedidos.*, clientes.nombre_completo 
+        FROM pedidos 
+        JOIN clientes ON pedidos.cliente_id = clientes.id
+      `);
+      res.json(pedidos.rows);
+    } catch (error) {
+      console.error('Error al obtener los pedidos:', error);
+      res.status(500).send('Error al obtener los pedidos');
+    }
+  });
+  
+
 
 // Ruta para obtener los pedidos de un cliente específico
-app.get('/pedidos/:cliente_id', (req, res) => {
-  try {
-    const { cliente_id } = req.params;
-    const pedidosCliente = pedidos.filter(pedido => pedido.cliente_id == cliente_id);
-    res.json(pedidosCliente);
-  } catch (error) {
-    console.error('Error al obtener los pedidos del cliente:', error);
-    res.status(500).send('Error en el servidor');
-  }
-});
-
-
-app.post('/register_order', async (req, res) => {
-    const { cliente_id, producto_id, tamano, cantidad, precio } = req.body;
+app.get('/pedidos/:cliente_id', async (req, res) => {
     try {
-        const result = await DB.query(
-            'INSERT INTO pedidos (cliente_id, producto_id, tamano, cantidad, precio) VALUES (?, ?, ?, ?, ?)',
-            [cliente_id, producto_id, tamano, cantidad, precio]
-        );
-        res.status(201).json({ message: 'Pedido registrado exitosamente', orderId: result.insertId });
-    } catch (err) {
-        console.error('Error al registrar el pedido:', err);
-        res.status(500).json({ message: 'Error interno del servidor' });
+        const { cliente_id } = req.params;
+        const [rows] = await DB.query('SELECT * FROM pedidos WHERE cliente_id = ?', [cliente_id]);
+        res.json(rows);
+    } catch (error) {
+        console.error('Error al obtener los pedidos del cliente:', error);
+        res.status(500).send('Error en el servidor');
     }
 });
+
+
+
+// Registrar nuevo pedido
+app.post('/register_order', async (req, res) => {
+    const orderDetails = req.body;
+  
+    console.log('Detalles del pedido recibidos en el servidor:', orderDetails);
+  
+    if (!orderDetails || orderDetails.length === 0) {
+      return res.status(400).json({ error: 'No se recibieron detalles del pedido.' });
+    }
+  
+    // Validar que todos los detalles del pedido tengan cliente_id y producto_tipo válidos
+    for (const item of orderDetails) {
+      if (!item.cliente_id) {
+        return res.status(400).json({ error: 'Falta el ID del cliente en los detalles del pedido.' });
+      }
+      if (!['pizza', 'refresco', 'antojito'].includes(item.producto_tipo)) {
+        return res.status(400).json({ error: `Tipo de producto inválido: ${item.producto_tipo}` });
+      }
+    }
+  
+    const connection = await DB.getConnection();
+  
+    try {
+      await connection.beginTransaction();
+  
+      // Insertar el pedido
+      const pedidoQuery = 'INSERT INTO pedidos (cliente_id, fecha) VALUES (?, NOW())';
+      const clienteId = orderDetails[0].cliente_id;
+      const [result] = await connection.query(pedidoQuery, [clienteId]);
+      const pedidoId = result.insertId;
+  
+      // Insertar detalles del pedido
+      const detallesPedidoQuery = `
+        INSERT INTO detalles_pedido (pedido_id, producto_id, producto_tipo, tamano, cantidad, precio)
+        VALUES ?
+      `;
+  
+      const detallesValues = orderDetails.map(item => [
+        pedidoId,
+        item.producto_id,
+        item.producto_tipo,
+        item.tamano,
+        item.cantidad,
+        item.precio
+      ]);
+  
+      await connection.query(detallesPedidoQuery, [detallesValues]);
+  
+      // Confirmar la transacción
+      await connection.commit();
+      res.status(200).json({ message: 'Pedido registrado exitosamente.' });
+    } catch (err) {
+      // Revertir la transacción en caso de error
+      await connection.rollback();
+      console.error('Error al registrar el pedido:', err);
+      res.status(500).json({ error: 'Error al registrar el pedido.' });
+    } finally {
+      // Liberar la conexión
+      connection.release();
+    }
+});
+
+
+
+
 
 // Ruta para eliminar detalles de pedido relacionados con un pedido
 app.delete('/detalles/pedido/:pedidoId', async (req, res) => {

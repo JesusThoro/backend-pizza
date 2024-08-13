@@ -24,7 +24,6 @@ const DB = mysql.createPool({
     queueLimit: 0
 });
 
-
 // Middleware para verificar el token
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -160,10 +159,6 @@ app.post('/register_order', async (req, res) => {
     }
 });
 
-
-
-
-
 // Ruta para eliminar detalles de pedido relacionados con un pedido
 app.delete('/detalles/pedido/:pedidoId', async (req, res) => {
     const { pedidoId } = req.params;
@@ -199,7 +194,7 @@ app.delete('/pedidos/cliente/:id', async (req, res) => {
 app.delete('/clientes/:id', async (req, res) => {
     const { id } = req.params;
     try {
-        await axios.delete('http://localhost:3001/pedidos/cliente/${id}');
+        await axios.delete(`http://localhost:3001/pedidos/cliente/${id}`);
         await DB.query("DELETE FROM clientes WHERE id = ?", [id]);
 
         res.json({ message: 'Cliente eliminado exitosamente' });
@@ -230,8 +225,6 @@ app.put('/clientes/:id', async (req, res) => {
     }
 });
 
-
-
 // Configura la carpeta uploads como estática
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -241,235 +234,41 @@ const storage = multer.diskStorage({
     cb(null, 'uploads/'); // Carpeta para guardar las imágenes
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); // Nombre del archivo con timestamp
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + '-' + file.originalname);
   }
 });
 
 const upload = multer({ storage: storage });
-// Rutas para productos de pizzas
-app.get('/pizzas', async (req, res) => {
+
+// Ruta para agregar un nuevo producto
+app.post('/productos', upload.single('imagen'), async (req, res) => {
+    const { nombre, descripcion, tamano, precio, tipo } = req.body;
+    const imagenUrl = req.file ? `/uploads/${req.file.filename}` : null;
+
+    let query;
+    let params;
+
+    if (tipo === 'Pizza') {
+        query = 'INSERT INTO pizzas (nombre, descripcion, tamano, precio, imagen_url) VALUES (?, ?, ?, ?, ?)';
+        params = [nombre, descripcion, tamano, precio, imagenUrl];
+    } else if (tipo === 'Refresco') {
+        query = 'INSERT INTO refrescos (nombre, descripcion, tamano, precio, imagen_url) VALUES (?, ?, ?, ?, ?)';
+        params = [nombre, descripcion, tamano, precio, imagenUrl];
+    } else if (tipo === 'Antojito') {
+        query = 'INSERT INTO antojitos (nombre, descripcion, precio, imagen_url) VALUES (?, ?, ?, ?)';
+        params = [nombre, descripcion, precio, imagenUrl];
+    }
+
     try {
-        const [rows] = await DB.query("SELECT * FROM pizzas");
-        res.json(rows);
+        const [result] = await DB.query(query, params);
+        res.status(201).json({ message: 'Producto agregado exitosamente', productoId: result.insertId });
     } catch (err) {
-        res.status(500).send('Error al obtener las pizzas');
+        console.error('Error al agregar el producto:', err);
+        res.status(500).json({ message: 'Error interno del servidor' });
     }
 });
-
- 
- // Configura la ruta para agregar una pizza
- app.post('/pizzas', upload.single('image'), async (req, res) => {
-    const { nombre, descripcion, price_small, price_medium, price_large, cheese_crust_price } = req.body;
-    const image = req.file ? req.file.path : null;
-  
-    if (!nombre || !descripcion || !price_small || !price_medium || !price_large || !cheese_crust_price) {
-      return res.status(400).send('Todos los campos son requeridos');
-    }
-  
-    try {
-      await DB.query('INSERT INTO pizzas (nombre, descripcion, price_small, price_medium, price_large, cheese_crust_price, url_imagen) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [nombre, descripcion, price_small, price_medium, price_large, cheese_crust_price, image]
-      );
-      res.status(201).send('Pizza agregada correctamente');
-    } catch (error) {
-      console.error('Error al agregar la pizza:', error);
-      res.status(500).send('Error al agregar la pizza');
-    }
-  });
-  
-  
-
-
-app.get('/pizzas/:id', async (req, res) => {
-    const { id } = req.params;
-    try {
-        const [results] = await DB.query("SELECT * FROM pizzas WHERE id = ?", [id]);
-        if (results.length > 0) {
-            res.json(results[0]);
-        } else {
-            res.status(404).send('Pizza no encontrada');
-        }
-    } catch (err) {
-        res.status(500).send('Error al obtener la pizza');
-    }
-});
-
-app.put('/pizzas/:id', upload.single('image'), async (req, res) => {
-    const id = req.params.id;
-    const { nombre, descripcion, price_small, price_medium, price_large, cheese_crust_price } = req.body;
-    const image = req.file ? req.file.path : null;
-  
-    try {
-      await DB.query('UPDATE pizzas SET nombre = ?, descripcion = ?, price_small = ?, price_medium = ?, price_large = ?, cheese_crust_price = ?, url_imagen = ? WHERE id = ?',
-        [nombre, descripcion, price_small, price_medium, price_large, cheese_crust_price, image, id]
-      );
-      res.status(200).send('Pizza actualizada correctamente');
-    } catch (error) {
-      console.error('Error al actualizar la pizza:', error);
-      res.status(500).send('Error al actualizar la pizza');
-    }
-  });
-
-app.delete('/pizzas/:id', async (req, res) => {
-    const { id } = req.params;
-    try {
-        const [result] = await DB.query("DELETE FROM pizzas WHERE id = ?", [id]);
-        if (result.affectedRows > 0) {
-            res.json({ message: 'Pizza eliminada exitosamente' });
-        } else {
-            res.status(404).send('Pizza no encontrada');
-        }
-    } catch (err) {
-        res.status(500).send('Error al eliminar la pizza');
-    }
-});
-
-// Rutas para refrescos
-app.get('/refrescos', async (req, res) => {
-    try {
-        const [rows] = await DB.query('SELECT * FROM refrescos');
-        res.json(rows);
-    } catch (err) {
-        console.error('Error al obtener los refrescos:', err);
-        res.status(500).send('Error al obtener los refrescos');
-    }
-});
-
-app.post('/refrescos', upload.single('image'), async (req, res) => {
-    const { nombre, descripcion, tamaño, precio } = req.body;
-    const url_imagen = req.file ? req.file.path : null;
-  
-    console.log('Datos recibidos:', { nombre, descripcion, tamaño, precio, url_imagen });
-  
-    if (!nombre || !descripcion || !precio) {
-      return res.status(400).send('Nombre, descripción y precio son campos requeridos');
-    }
-  
-    try {
-      await DB.query(
-        'INSERT INTO refrescos (nombre, descripcion, tamaño, precio, url_imagen) VALUES (?, ?, ?, ?, ?)',
-        [nombre, descripcion, tamaño || null, precio, url_imagen]
-      );
-      res.status(201).send('Refresco agregado correctamente');
-    } catch (error) {
-      console.error('Error al agregar refresco:', error);
-      res.status(500).send('Error al agregar refresco');
-    }
-  });
-  
-  
-  
-
-app.put('/refrescos/:id', async (req, res) => {
-    const { nombre, descripcion, tamaño, precio, url_imagen } = req.body;
-    try {
-        const [result] = await DB.query('UPDATE refrescos SET nombre = ?, descripcion = ?, tamaño = ?, precio = ?, url_imagen = ? WHERE id = ?', [nombre, descripcion, tamaño, precio, url_imagen, req.params.id]);
-
-        if (result.affectedRows > 0) {
-            res.send('Refresco actualizado');
-        } else {
-            res.status(404).send('Refresco no encontrado');
-        }
-    } catch (err) {
-        console.error('Error al actualizar refresco:', err);
-        res.status(500).send('Error en el servidor al actualizar refresco');
-    }
-});
-
-app.delete('/refrescos/:id', async (req, res) => {
-    try {
-        const [result] = await DB.query('DELETE FROM refrescos WHERE id = ?', [req.params.id]);
-
-        if (result.affectedRows > 0) {
-            res.send('Refresco eliminado');
-        } else {
-            res.status(404).send('Refresco no encontrado');
-        }
-    } catch (err) {
-        console.error('Error al eliminar refresco:', err);
-        res.status(500).send('Error en el servidor al eliminar refresco');
-    }
-});
-
-// Rutas para antojitos
-app.get('/antojitos', async (req, res) => {
-    try {
-        const [rows] = await DB.query('SELECT * FROM antojitos');
-        res.json(rows);
-    } catch (error) {
-        console.error('Error al obtener los antojitos:', error);
-        res.status(500).json({ message: 'Error al obtener los antojitos' });
-    }
-});
-
-app.post('/antojitos', upload.single('image'), async (req, res) => {
-    const { nombre, descripcion, precio } = req.body;
-    const imageUrl = req.file ? `uploads/${req.file.filename}` : null;
-  
-    try {
-      // Verifica si los campos no están vacíos
-      if (!nombre || !descripcion || !precio) {
-        return res.status(400).json({ message: 'Faltan datos requeridos' });
-      }
-  
-      const [result] = await DB.query('INSERT INTO antojitos (nombre, descripcion, precio, url_imagen) VALUES (?, ?, ?, ?)', [nombre, descripcion, precio, imageUrl]);
-  
-      res.status(201).json({ id: result.insertId });
-    } catch (error) {
-      console.error('Error al añadir antojito:', error);
-      res.status(500).json({ message: 'Error al añadir antojito' });
-    }
-  });
-  
-
-app.put('/antojitos/:id', async (req, res) => {
-    const { nombre, descripcion, precio, url_imagen } = req.body;
-    try {
-        const [result] = await DB.query('UPDATE antojitos SET nombre = ?, descripcion = ?, precio = ?, url_imagen = ? WHERE id = ?', [nombre, descripcion, precio, url_imagen, req.params.id]);
-
-        if (result.affectedRows > 0) {
-            res.send('Antojito actualizado');
-        } else {
-            res.status(404).send('Antojito no encontrado');
-        }
-    } catch (error) {
-        console.error('Error al actualizar antojito:', error);
-        res.status(500).send('Error en el servidor al actualizar antojito');
-    }
-});
-
-app.delete('/antojitos/:id', async (req, res) => {
-    try {
-        const [result] = await DB.query('DELETE FROM antojitos WHERE id = ?', [req.params.id]);
-
-        if (result.affectedRows > 0) {
-            res.send('Antojito eliminado');
-        } else {
-            res.status(404).send('Antojito no encontrado');
-        }
-    } catch (error) {
-        console.error('Error al eliminar antojito:', error);
-        res.status(500).send('Error en el servidor al eliminar antojito');
-    }
-});
-
-app.post('/api/pedidos', async (req, res) => {
-    const { cliente_id, fecha } = req.body;
-    // Inserta el nuevo pedido en la base de datos
-  });
-
-app.post('/api/detalles_pedido', async (req, res) => {
-    const { pedido_id, tipo_producto, producto_id, tamano, cantidad, precio } = req.body;
-    // Inserta los detalles del pedido en la base de datos
-  });
-
-app.get('/api/pedidos/:id', async (req, res) => {
-    const pedidoId = req.params.id;
-    // Obtén el pedido y sus detalles de la base de datos
-  });
-  
-  
 
 app.listen(port, () => {
-    console.log(`Servidor escuchando en http://localhost:${port}`);
+    console.log(`Servidor corriendo en http://localhost:${port}`);
 });
